@@ -4,7 +4,7 @@ import java.io.PrintWriter;
 import java.util.*;
 
 public class main {
-    static final int BOARD_SIZE = 4;
+    static final int BOARD_SIZE = 5;
     static final int TOTAL_MOVES = 20;
     static HashSet<String> words;
     public static void main(String[] args) throws FileNotFoundException {
@@ -53,7 +53,10 @@ public class main {
                         int score = nextBoard.totalScore;
 
 //                        if(scoreBoard(nextBoard) > 0) {
-                        maxScore = Math.max(maxScore, score);
+                        if(score > maxScore) {
+                            maxScore = score;
+                            nextBoardsToCheck = new ArrayList<>();
+                        }
                         if (score == maxScore) {
                             nextBoardsToCheck.add(nextBoard);
                         }
@@ -65,12 +68,12 @@ public class main {
 //                        }
                     }
                 }
-                boardsToCheck = new ArrayList<>();
-                for (Sim sim : nextBoardsToCheck) {
-                    if (sim.totalScore == maxScore) { //only take boards that yielded the max score
-                        boardsToCheck.add(sim);
-                    }
-                }
+                boardsToCheck = new ArrayList<>(nextBoardsToCheck);
+//                for (Sim sim : nextBoardsToCheck) {
+//                    if (sim.totalScore == maxScore) { //only take boards that yielded the max score
+//                        boardsToCheck.add(sim);
+//                    }
+//                }
             }
 
             StringBuilder result = new StringBuilder(boardI + " " + maxScore + " ");
@@ -128,6 +131,7 @@ public class main {
         ArrayList<Move> moves;
         HashSet<String> wordsFound; //easy way to prevent duplicates
         int totalScore;
+        int penaltiesLeft = 3;
 
         public Sim(char[][] board) {
             this.board = board;
