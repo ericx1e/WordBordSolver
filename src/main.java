@@ -4,7 +4,7 @@ import java.io.PrintWriter;
 import java.util.*;
 
 public class main {
-    static final int BOARD_SIZE = 5;
+    static final int BOARD_SIZE = 4;
     static final int TOTAL_MOVES = 20;
     static HashSet<String> words;
     public static void main(String[] args) throws FileNotFoundException {
@@ -20,7 +20,8 @@ public class main {
 
         int boardI = 0;
 
-        PrintWriter out = new PrintWriter("solutions" + BOARD_SIZE + ".txt");
+        PrintWriter out = new PrintWriter("solutionsnew" + BOARD_SIZE + ".txt");
+        PrintWriter out1 = new PrintWriter("movesnew" + BOARD_SIZE + ".txt");
 
         double startTime = System.currentTimeMillis();
         while (boardsIn.hasNext()) {
@@ -52,20 +53,25 @@ public class main {
 
                         int score = nextBoard.totalScore;
 
-//                        if(scoreBoard(nextBoard) > 0) {
                         if(score > maxScore) {
                             maxScore = score;
-                            nextBoardsToCheck = new ArrayList<>();
                         }
-                        if (score == maxScore) {
-                            nextBoardsToCheck.add(nextBoard);
-                        }
-//                        }
+                        nextBoardsToCheck.add(nextBoard);
 
                         //prints out the board
 //                        for(int r = 0; r < BOARD_SIZE; r++) {
 //                            System.out.println(nextBoard[r]);
 //                        }
+                    }
+                }
+                for(int i = 0; i < nextBoardsToCheck.size(); i++) {
+                    Sim e = nextBoardsToCheck.get(i);
+                    if(e.totalScore < maxScore) {
+                        e.penaltiesLeft--;
+                    }
+                    if(e.penaltiesLeft <= 0) {
+                        nextBoardsToCheck.remove(i);
+                        i--;
                     }
                 }
                 boardsToCheck = new ArrayList<>(nextBoardsToCheck);
@@ -76,19 +82,35 @@ public class main {
 //                }
             }
 
-            StringBuilder result = new StringBuilder(boardI + " " + maxScore + " ");
+            Sim maxSim = boardsToCheck.get(0);
 
-            for (Move move : boardsToCheck.get(0).moves) {
+            for(Sim b : boardsToCheck) {
+                if(b.totalScore > maxSim.totalScore) {
+                    maxSim = b;
+                }
+            }
+
+            StringBuilder result = new StringBuilder(boardI + " " + maxSim.totalScore + " ");
+            StringBuilder result1 = new StringBuilder();
+
+
+            for (Move move : maxSim.moves) {
                 result.append(move);
                 result.append(" ");
+                result1.append(move.dir.equals("r") ? 0 : 1).append(" ");
+                result1.append(move.i).append(" ");
+                result1.append(move.n).append(" ");
             }
+
 
             System.out.println(result);
             out.println(result);
+            out1.println(result1);
             boardI++;
         }
 
         out.close();
+        out1.close();
 
         boardsIn.close();
 
@@ -131,19 +153,21 @@ public class main {
         ArrayList<Move> moves;
         HashSet<String> wordsFound; //easy way to prevent duplicates
         int totalScore;
-        int penaltiesLeft = 3;
+        int penaltiesLeft;
 
         public Sim(char[][] board) {
             this.board = board;
             moves = new ArrayList<>();
             wordsFound = new HashSet<>();
+            penaltiesLeft = 4;
         }
 
-        public Sim(char[][] board, ArrayList<Move> moves, HashSet<String> wordsFound) {
+        public Sim(char[][] board, ArrayList<Move> moves, HashSet<String> wordsFound, int penaltiesLeft) {
             this.board = board;
             this.moves = moves;
             this.wordsFound = wordsFound;
             this.totalScore = wordsFound.size();
+            this.penaltiesLeft = penaltiesLeft;
         }
 
         public Sim moveAndScore(Move move) {
@@ -168,7 +192,7 @@ public class main {
             HashSet<String> nextWordsFound = new HashSet<>(wordsFound);
             nextWordsFound.addAll(scoreBoard(result));
 
-            return new Sim(result, nextMoves, nextWordsFound);
+            return new Sim(result, nextMoves, nextWordsFound, penaltiesLeft);
         }
 
     }
