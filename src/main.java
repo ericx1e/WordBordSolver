@@ -15,107 +15,111 @@ public class main {
             words.add(wordsIn.next());
         }
         wordsIn.close();
+        //tolerance allows boards without the maximum score for a round of moves to pass
+        //higher tolerance sometimes results in lower total score
 
-        Scanner boardsIn = new Scanner(new File("boards" + BOARD_SIZE + ".txt"));
+        for(int tolerance = 2; tolerance <= 2; tolerance++) {
+            Scanner boardsIn = new Scanner(new File("boards" + BOARD_SIZE + ".txt"));
 
-        int boardI = 0;
+            int boardI = 0;
 
-        PrintWriter out = new PrintWriter("solutionsnew" + BOARD_SIZE + ".txt");
-        PrintWriter out1 = new PrintWriter("movesnew" + BOARD_SIZE + ".txt");
+            PrintWriter out = new PrintWriter("solutions" + BOARD_SIZE + "-tol" + tolerance + ".txt");
+            PrintWriter out1 = new PrintWriter("moves" + BOARD_SIZE + "-tol" + tolerance + ".txt");
 
-        double startTime = System.currentTimeMillis();
-        while (boardsIn.hasNext()) {
-            char[][] board = new char[BOARD_SIZE][BOARD_SIZE];
-            for (int i = 0; i < BOARD_SIZE; i++) {
-                board[i] = boardsIn.next().toCharArray();
-            }
+            double startTime = System.currentTimeMillis();
+            while (boardsIn.hasNext()) {
+                char[][] board = new char[BOARD_SIZE][BOARD_SIZE];
+                for (int i = 0; i < BOARD_SIZE; i++) {
+                    board[i] = boardsIn.next().toCharArray();
+                }
 
-            //Generates every possible move
+                //Generates every possible move
 //            for(int i = 0; i < BOARD_SIZE * BOARD_SIZE * 2; i++) {
 //                Move nextMove = new Move((i < BOARD_SIZE * BOARD_SIZE) ? "r" : "c", (i%(BOARD_SIZE*BOARD_SIZE))/BOARD_SIZE, i%BOARD_SIZE);
 //            }
 
-            ArrayList<Sim> boardsToCheck = new ArrayList<>();
-            boardsToCheck.add(new Sim(board));
+                ArrayList<Sim> boardsToCheck = new ArrayList<>();
+                boardsToCheck.add(new Sim(board, tolerance));
 
-            int maxScore = 0;
-            for (int j = 0; j < TOTAL_MOVES; j++) {
-                ArrayList<Sim> nextBoardsToCheck = new ArrayList<>();
-                //Parallel array
+                int maxScore = 0;
+                for (int j = 0; j < TOTAL_MOVES; j++) {
+                    ArrayList<Sim> nextBoardsToCheck = new ArrayList<>();
+                    //Parallel array
 //                ArrayList<Integer> nextBoardsScores = new ArrayList<>();
-                for (Sim b : boardsToCheck) {
-                    for (int i = 0; i < BOARD_SIZE * BOARD_SIZE * 2; i++) {
-                        Move nextMove = new Move((i < BOARD_SIZE * BOARD_SIZE) ? "r" : "c", (i % (BOARD_SIZE * BOARD_SIZE)) / BOARD_SIZE, i % BOARD_SIZE);
-                        if (nextMove.n == 0) {
-                            continue;
-                        }
-                        Sim nextBoard = b.moveAndScore(nextMove);
+                    for (Sim b : boardsToCheck) {
+                        for (int i = 0; i < BOARD_SIZE * BOARD_SIZE * 2; i++) {
+                            Move nextMove = new Move((i < BOARD_SIZE * BOARD_SIZE) ? "r" : "c", (i % (BOARD_SIZE * BOARD_SIZE)) / BOARD_SIZE, i % BOARD_SIZE);
+                            if (nextMove.n == 0) {
+                                continue;
+                            }
+                            Sim nextBoard = b.moveAndScore(nextMove);
 
-                        int score = nextBoard.totalScore;
+                            int score = nextBoard.totalScore;
 
-                        if(score > maxScore) {
-                            maxScore = score;
-                        }
-                        nextBoardsToCheck.add(nextBoard);
+                            if (score > maxScore) {
+                                maxScore = score;
+                            }
+                            nextBoardsToCheck.add(nextBoard);
 
-                        //prints out the board
+                            //prints out the board
 //                        for(int r = 0; r < BOARD_SIZE; r++) {
 //                            System.out.println(nextBoard[r]);
 //                        }
+                        }
                     }
-                }
-                for(int i = 0; i < nextBoardsToCheck.size(); i++) {
-                    Sim e = nextBoardsToCheck.get(i);
-                    if(e.totalScore < maxScore) {
-                        e.penaltiesLeft--;
+                    for (int i = 0; i < nextBoardsToCheck.size(); i++) {
+                        Sim e = nextBoardsToCheck.get(i);
+                        if (e.totalScore < maxScore) {
+                            e.penaltiesLeft--;
+                        }
+                        if (e.penaltiesLeft <= 0) {
+                            nextBoardsToCheck.remove(i);
+                            i--;
+                        }
                     }
-                    if(e.penaltiesLeft <= 0) {
-                        nextBoardsToCheck.remove(i);
-                        i--;
-                    }
-                }
-                boardsToCheck = new ArrayList<>(nextBoardsToCheck);
+                    boardsToCheck = new ArrayList<>(nextBoardsToCheck);
 //                for (Sim sim : nextBoardsToCheck) {
 //                    if (sim.totalScore == maxScore) { //only take boards that yielded the max score
 //                        boardsToCheck.add(sim);
 //                    }
 //                }
-            }
-
-            Sim maxSim = boardsToCheck.get(0);
-
-            for(Sim b : boardsToCheck) {
-                if(b.totalScore > maxSim.totalScore) {
-                    maxSim = b;
                 }
+
+                Sim maxSim = boardsToCheck.get(0);
+
+                for (Sim b : boardsToCheck) {
+                    if (b.totalScore > maxSim.totalScore) {
+                        maxSim = b;
+                    }
+                }
+
+                StringBuilder result = new StringBuilder(boardI + " " + maxSim.totalScore + " ");
+                StringBuilder result1 = new StringBuilder();
+
+
+                for (Move move : maxSim.moves) {
+                    result.append(move);
+                    result.append(" ");
+                    result1.append(move.dir.equals("r") ? 0 : 1).append(" ");
+                    result1.append(move.i).append(" ");
+                    result1.append(move.n).append(" ");
+                }
+
+
+                System.out.println(result);
+                out.println(result);
+                out1.println(result1);
+                boardI++;
             }
 
-            StringBuilder result = new StringBuilder(boardI + " " + maxSim.totalScore + " ");
-            StringBuilder result1 = new StringBuilder();
+            out.close();
+            out1.close();
 
+            boardsIn.close();
 
-            for (Move move : maxSim.moves) {
-                result.append(move);
-                result.append(" ");
-                result1.append(move.dir.equals("r") ? 0 : 1).append(" ");
-                result1.append(move.i).append(" ");
-                result1.append(move.n).append(" ");
-            }
-
-
-            System.out.println(result);
-            out.println(result);
-            out1.println(result1);
-            boardI++;
+            double endTime = System.currentTimeMillis();
+            System.out.println("Program run time: " + (endTime - startTime) / 1000 + " seconds");
         }
-
-        out.close();
-        out1.close();
-
-        boardsIn.close();
-
-        double endTime = System.currentTimeMillis();
-        System.out.println("Program run time: " + (endTime - startTime)/1000 + " seconds");
     }
 
     static HashSet<String> scoreBoard(char[][] board) {
@@ -155,11 +159,11 @@ public class main {
         int totalScore;
         int penaltiesLeft;
 
-        public Sim(char[][] board) {
+        public Sim(char[][] board, int penaltiesLeft) {
             this.board = board;
             moves = new ArrayList<>();
             wordsFound = new HashSet<>();
-            penaltiesLeft = 4;
+            this.penaltiesLeft = penaltiesLeft;
         }
 
         public Sim(char[][] board, ArrayList<Move> moves, HashSet<String> wordsFound, int penaltiesLeft) {
